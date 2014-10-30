@@ -22,7 +22,7 @@ class CrawlerController extends BaseController
     |
     */
 
-    public function getNea($sessionId)
+    public function getNea($sessionId = null)
     {
         //set POST variables
         $url = 'https://eservices.nea.gov.sg/TR/action/QRsearchaction';
@@ -31,15 +31,8 @@ class CrawlerController extends BaseController
         //create the multi handler
         $multiHandler = curl_multi_init();
 
-        for ($postalCodeInt = 0, $postalCodeInt < 2; $postalCodeInt++;) {
+        for ($postalCodeInt = 0; $postalCodeInt < 12; $postalCodeInt++) {
             $postalCode = str_pad($postalCodeInt, 6, "0", STR_PAD_LEFT);
-
-            $fields = array(
-                'txtbox' => urlencode($postalCode),
-            );
-
-            $cookieFile = "/cookies.txt";
-
             //open connection
             $options = array(
                 CURLOPT_RETURNTRANSFER => true,     // return web page
@@ -61,25 +54,84 @@ class CrawlerController extends BaseController
 
             $ch = curl_init($url);
             curl_setopt_array($ch, $options);
+            curl_multi_add_handle($multiHandler, $ch);
 
             $cUrls[] = $ch;
-
-            curl_multi_add_handle($multiHandler, $ch);
         }
 
         $running = null;
         //execute the handles
         do {
-            curl_multi_exec($multiHandler, $running);
-        } while ($running > 0);
+            $status = curl_multi_exec($multiHandler, $running);
+            // Check for errors
+            if ($status > 0) {
+                // Display error message
+                echo "ERROR!\n " . curl_multi_strerror($status);
+            }
+        } while ($status === CURLM_CALL_MULTI_PERFORM || $running);
 
-        foreach($cUrls as $ch) {
-            $data[] = curl_multi_getcontent($ch);
+        $records = array();
+        foreach ($cUrls as $ch) {
+            $records[] = $this->extractData(curl_multi_getcontent($ch));
             curl_multi_remove_handle($multiHandler, $ch);
         }
 
         curl_multi_close($multiHandler);
 
+        $param['records'] = $records;
+
+        return View::make('result', $param);
+
+
+    }
+
+
+    private function extractData($html)
+    {
+
+        $dataArray = [];
+        $tableTag = "<TABLE  id=\"showtab\"  border=0 cellSpacing=0 cellPadding=0 ";
+        $tableStart = strpos($html, $tableTag);
+        $table = substr($html, $tableStart, strpos($html, "</TABLE>", $tableStart) - $tableStart);
+
+
+        $DOM = new DOMDocument;
+        $DOM->loadHTML($table);
+
+        //get all <tr>
+        $items = $DOM->getElementsByTagName('tr');
+
+        //display all H1 text
+        for ($i = 1; $i < $items->length; $i++) {
+            $dataArray[] = $this->recordData(preg_split("/[\r]+/", trim($items->item($i)->nodeValue)));
+
+        }
+
+        return $dataArray;
+    }
+
+    private function recordData($array)
+    {
+        $data = array();
+        $count = 0;
+        foreach ($array as $item) {
+            $trimmed = trim($item);
+            if (!empty($trimmed)) {
+                $data[$count] = $trimmed;
+                $count++;
+            }
+        }
+
+        if (!empty($data) && count($data) >= 4) {
+            $trackRecord = new NeaTrackRecord;
+            $trackRecord->premises = $data[1];
+            $trackRecord->license_ref_no = $data[2];
+            $trackRecord->licensee = $data[3];
+            $trackRecord->save();
+            return $data[1] . ": " . $data[2] . "-" . $data[3];
+        } else {
+            return null;
+        }
 
     }
 
