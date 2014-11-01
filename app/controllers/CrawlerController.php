@@ -9,8 +9,8 @@
 class CrawlerController extends BaseController
 {
 
-    private $postalStart = 570509;
-    private $postalEnd = 571019;
+    private $postalStart = 389372;
+    private $postalEnd = 389974;
 
     /*
     |--------------------------------------------------------------------------
@@ -131,8 +131,7 @@ class CrawlerController extends BaseController
 
         if (!empty($data) && count($data) >= 4 && strpos($data[1], $postalCode)) {
             $trackRecord = new NeaTrackRecord;
-            $trackRecord->vendor_name = $data[0];
-            $trackRecord->address = $data[1];
+            $trackRecord->premises = $data[1];
             $trackRecord->license_ref_no = $data[2];
             $trackRecord->licensee = $data[3];
             $trackRecord->postal_code = $postalCode;
