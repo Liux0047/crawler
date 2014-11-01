@@ -9,6 +9,9 @@
 class CrawlerController extends BaseController
 {
 
+    private $postalStart = 570509;
+    private $postalEnd = 571019;
+
     /*
     |--------------------------------------------------------------------------
     | Default Crawler Controller
@@ -31,7 +34,7 @@ class CrawlerController extends BaseController
         //create the multi handler
         $multiHandler = curl_multi_init();
 
-        for ($postalCodeInt = 0; $postalCodeInt < 12; $postalCodeInt++) {
+        for ($postalCodeInt = $this->postalStart; $postalCodeInt < $this->postalEnd; $postalCodeInt++) {
             $postalCode = str_pad($postalCodeInt, 6, "0", STR_PAD_LEFT);
             //open connection
             $options = array(
@@ -56,7 +59,10 @@ class CrawlerController extends BaseController
             curl_setopt_array($ch, $options);
             curl_multi_add_handle($multiHandler, $ch);
 
-            $cUrls[] = $ch;
+
+            $cUrlRecord['curl'] = $ch;
+            $cUrlRecord['postalCode'] = $postalCode;
+            $cUrls[] = $cUrlRecord;
         }
 
         $running = null;
@@ -72,8 +78,8 @@ class CrawlerController extends BaseController
 
         $records = array();
         foreach ($cUrls as $ch) {
-            $records[] = $this->extractData(curl_multi_getcontent($ch));
-            curl_multi_remove_handle($multiHandler, $ch);
+            $records[] = $this->extractData(curl_multi_getcontent($ch['curl']), $ch['postalCode']);
+            curl_multi_remove_handle($multiHandler, $ch['curl']);
         }
 
         curl_multi_close($multiHandler);
@@ -86,47 +92,50 @@ class CrawlerController extends BaseController
     }
 
 
-    private function extractData($html)
+    private function extractData($html, $postalCode)
     {
 
         $dataArray = [];
         $tableTag = "<TABLE  id=\"showtab\"  border=0 cellSpacing=0 cellPadding=0 ";
         $tableStart = strpos($html, $tableTag);
-        $table = substr($html, $tableStart, strpos($html, "</TABLE>", $tableStart) - $tableStart);
+        if ($tableStart) {
+            $table = substr($html, $tableStart, strpos($html, "</TABLE>", $tableStart) - $tableStart);
 
 
-        $DOM = new DOMDocument;
-        $DOM->loadHTML($table);
+            $DOM = new DOMDocument;
+            $DOM->loadHTML($table);
 
-        //get all <tr>
-        $items = $DOM->getElementsByTagName('tr');
+            //get all <tr>
+            $items = $DOM->getElementsByTagName('tr');
 
-        //display all H1 text
-        for ($i = 1; $i < $items->length; $i++) {
-            $dataArray[] = $this->recordData(preg_split("/[\r]+/", trim($items->item($i)->nodeValue)));
+            //display all H1 text
+            for ($i = 1; $i < $items->length; $i++) {
+                $dataArray[] = $this->recordData($items->item($i)->childNodes, $postalCode);
 
+            }
         }
+
 
         return $dataArray;
     }
 
-    private function recordData($array)
+    private function recordData($nodes, $postalCode)
     {
         $data = array();
-        $count = 0;
-        foreach ($array as $item) {
-            $trimmed = trim($item);
-            if (!empty($trimmed)) {
-                $data[$count] = $trimmed;
-                $count++;
+        foreach ($nodes as $node) {
+            $nodeValue = trim($node->nodeValue);
+            if (!empty($nodeValue)) {
+                $data[] = $nodeValue;
             }
         }
 
-        if (!empty($data) && count($data) >= 4) {
+        if (!empty($data) && count($data) >= 4 && strpos($data[1], $postalCode)) {
             $trackRecord = new NeaTrackRecord;
-            $trackRecord->premises = $data[1];
+            $trackRecord->vendor_name = $data[0];
+            $trackRecord->address = $data[1];
             $trackRecord->license_ref_no = $data[2];
             $trackRecord->licensee = $data[3];
+            $trackRecord->postal_code = $postalCode;
             $trackRecord->save();
             return $data[1] . ": " . $data[2] . "-" . $data[3];
         } else {
