@@ -9,8 +9,9 @@
 class CrawlerController extends BaseController
 {
 
-    private $postalStart = 389397;
-    private $postalEnd = 389399;
+    // 20 * 500
+    private $postalStart = 0;
+    private $postalEnd = 500;
 
     /*
     |--------------------------------------------------------------------------
@@ -25,8 +26,10 @@ class CrawlerController extends BaseController
     |
     */
 
-    public function getNea($sessionId = null)
+    public function getNea($batch = 0, $sessionId = null)
     {
+        //overrides the default PHP memory limit.
+        ini_set('memory_limit', '-1');
         //set POST variables
         $url = 'https://eservices.nea.gov.sg/TR/action/QRsearchaction';
         $cUrls = array();
@@ -34,8 +37,8 @@ class CrawlerController extends BaseController
         //create the multi handler
         $multiHandler = curl_multi_init();
 
-        for ($postalCodeInt = $this->postalStart; $postalCodeInt < $this->postalEnd; $postalCodeInt++) {
-            $postalCode = str_pad($postalCodeInt, 6, "0", STR_PAD_LEFT);
+        for ($postalCodeInt = $this->postalStart + 500 * $batch; $postalCodeInt < $this->postalEnd + 500 * $batch; $postalCodeInt++) {
+            $postalCode = str_pad($postalCodeInt, 5, "0", STR_PAD_LEFT);
             //open connection
             $options = array(
                 CURLOPT_RETURNTRANSFER => true,     // return web page
@@ -129,7 +132,7 @@ class CrawlerController extends BaseController
             }
         }
 
-        if (!empty($data) && count($data) >= 4 && strpos($data[1], $postalCode)) {
+        if (!empty($data) && count($data) >= 4 && strpos($data[1], $postalCode) == (strlen($data[1]) - 5)) {
             $trackRecord = new NeaTrackRecord;
             $trackRecord->premises = preg_replace('/\s+/', ' ', $data[1]);
             $trackRecord->license_ref_no = $data[2];

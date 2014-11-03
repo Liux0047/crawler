@@ -17,4 +17,4 @@ Route::get('/', function()
 });
 
 
-Route::controller('crawler', 'CrawlerController');
+Route::get('crawler/nea/{batch}/{sessionId}', 'CrawlerController@getNea');
