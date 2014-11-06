@@ -18,3 +18,10 @@ Route::get('/', function()
 
 
 Route::get('crawler/nea/{batch}/{sessionId}', 'CrawlerController@getNea');
+
+
+Route::get('read-file', 'MatrixMapController@getReadFile');
+
+Route::get('map-matrix/{sourcePos}/{destinationPos}', 'MatrixMapController@getMapMatrix');
+Route::post('store-distance', 'MatrixMapController@recordDistance');
+

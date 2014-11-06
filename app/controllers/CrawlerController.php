@@ -30,6 +30,8 @@ class CrawlerController extends BaseController
     {
         //overrides the default PHP memory limit.
         ini_set('memory_limit', '-1');
+        //increase execution limit
+        ini_set('max_execution_time', 300);
         //set POST variables
         $url = 'https://eservices.nea.gov.sg/TR/action/QRsearchaction';
         $cUrls = array();
@@ -145,5 +147,20 @@ class CrawlerController extends BaseController
         }
 
     }
+
+    /*
+    public function getExtractPostalCode()
+    {
+        $records = NeaTrackRecord::where('nea_track_record_id', '>', '20000')
+            ->get();
+        foreach ($records as $record) {
+            if (substr($record->premises, -5) == $record->postal_code_query) {
+                $record->postal_code = substr($record->premises, -6);
+                $record->save();
+            }
+        }
+
+    }
+    */
 
 }
