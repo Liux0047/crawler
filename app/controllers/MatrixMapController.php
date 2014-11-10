@@ -9,6 +9,7 @@
 class MatrixMapController extends BaseController
 {
     const MATRIX_SIZE = 10;
+    private $size = 986;
 
     public function getReadFile()
     {
@@ -41,6 +42,19 @@ class MatrixMapController extends BaseController
         $param['sources'] = $sources;
         $param['destinations'] = $destinations;
         $param['mode'] = 'WALKING';
+        if ($destinationPos <= $this->size) {
+            $nextDestinationPos = $destinationPos + 1;
+            $nextSourcePos = $sourcePos;
+        } else {
+            $nextDestinationPos = 0;
+            $nextSourcePos = $sourcePos + 1;
+        }
+
+        if ($sourcePos <= $this->size) {
+            $param['nextUrl'] = asset('map-matrix/' . $nextSourcePos . '/' . $nextDestinationPos);
+        } else {
+            $param['nextUrl'] = NULL;
+        }
 
         return View::make('distance-matrix', $param);
 

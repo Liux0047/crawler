@@ -67,6 +67,7 @@
                 }
             }
 
+
             $.ajax({
                 type: "POST",
                 url: "{{ action('MatrixMapController@recordDistance') }}",
@@ -80,8 +81,13 @@
             })
             .done(function( msg ) {
                 outputDiv.innerHTML += 'Saved' + '<br>';
+                //close this window
+                window.close();
 
             });
+
+            //start a new window
+            window.open("{{ $nextUrl }}", "_blank");
         }
 
     }
