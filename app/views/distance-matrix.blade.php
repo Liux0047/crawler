@@ -18,6 +18,13 @@
 
     <script>
 
+
+    //start a new window
+    setTimeout( function() {
+        window.open("{{ $nextUrl }}", "_blank");
+    }, 10);
+
+
     var origins = [
         @foreach($sources as $source)
         new google.maps.LatLng({{ $source->latitude }}, {{ $source->longitude }}),
@@ -85,9 +92,6 @@
                 window.close();
 
             });
-
-            //start a new window
-            window.open("{{ $nextUrl }}", "_blank");
         }
 
     }
