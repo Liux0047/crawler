@@ -71,19 +71,21 @@ class MatrixMapController extends BaseController
             foreach ($destinations as $destination) {
                 $rows = json_decode(Input::get('results'));
                 $result = $rows[$row]->elements[$col];
-                $distance = new Distance;
-                $distance->source = $source;
-                $distance->destination = $destination;
-                $distance->mode = Input::get('mode');
-                $distance->distance = $result->distance->value;
-                $distance->duration = $result->duration->value;
-                $distance->save();
+                if ($result->status == "OK"){
+                    $distance = new Distance;
+                    $distance->source = $source;
+                    $distance->destination = $destination;
+                    $distance->mode = Input::get('mode');
+                    $distance->distance = $result->distance->value;
+                    $distance->duration = $result->duration->value;
+                    $distance->save();
+                }
                 $col++;
             }
             $row++;
         }
 
-        return (DB::getQueryLog());
+        return 1;
 
 
     }

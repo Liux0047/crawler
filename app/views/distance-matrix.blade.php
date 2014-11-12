@@ -4,26 +4,11 @@
     <title>Distance Matrix service</title>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
     {{ HTML::script('js/jquery-1.11.1.min.js') }}
-    <style>
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
-
-    #outputDiv {
-        font-size: 12px;
-    }
-    </style>
-
     <script>
 
 
     //start a new window
-    setTimeout( function() {
-        window.open("{{ $nextUrl }}", "_blank");
-    }, 10);
-
+    window.open("{{ $nextUrl }}", "_blank");
 
     var origins = [
         @foreach($sources as $source)
@@ -65,6 +50,7 @@
             var outputDiv = document.getElementById('outputDiv');
             outputDiv.innerHTML = '';
 
+            /*
             for (var i = 0; i < origins.length; i++) {
                 var results = response.rows[i].elements;
                 for (var j = 0; j < results.length; j++) {
@@ -73,6 +59,7 @@
                     + results[j].duration.value + '<br>';
                 }
             }
+            */
 
 
             $.ajax({
@@ -88,6 +75,8 @@
             })
             .done(function( msg ) {
                 outputDiv.innerHTML += 'Saved' + '<br>';
+            })
+            .always(function(){
                 //close this window
                 window.close();
 
@@ -100,7 +89,6 @@
 
 <body>
     <div id="content-pane">
-        Content:
 
         <div id="outputDiv"></div>
     </div>
