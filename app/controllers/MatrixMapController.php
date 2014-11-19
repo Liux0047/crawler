@@ -9,7 +9,7 @@
 class MatrixMapController extends BaseController
 {
     const MATRIX_SIZE = 10;
-    private $size = 986;
+    private $size = 945;
 
     public function getReadFile()
     {

@@ -7,9 +7,6 @@
     <script>
 
 
-    //start a new window
-    window.open("{{ $nextUrl }}", "_blank");
-
     var origins = [
         @foreach($sources as $source)
         new google.maps.LatLng({{ $source->latitude }}, {{ $source->longitude }}),
@@ -35,8 +32,14 @@
 
     function callback(response, status) {
         if (status != google.maps.DistanceMatrixStatus.OK) {
-            alert('Error was: ' + status);
+            window.location.replace(window.location.href);
         } else {
+
+            //start a new window
+            setTimeout( function() {
+                window.open("{{ $nextUrl }}", "_blank");
+            }, 500);
+
             var origins = [
                 @foreach( $sources as $source)
                 {{ $source->area_id }},
