@@ -29,3 +29,8 @@ Route::get('bus-service', 'BusController@getDistance');
 Route::get('bus-service-test', 'BusController@testConnection');
 Route::get('bus-service-stops', 'BusController@padStopId');
 
+
+Route::get('bus-service-smrt', 'SMRTController@getDistance');
+
+
+
