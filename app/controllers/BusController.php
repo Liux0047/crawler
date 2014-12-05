@@ -1,16 +1,19 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: Allen
  * Date: 11/19/2014
  * Time: 3:51 PM
  */
-
 class BusController extends BaseController
 {
 
+    private $direction = "1";
+    private $sessionId = 'uvwwxpyiqzkpanuxw1w2sa55';
 
-    public function getDistance($batch = 0, $sessionId = null)
+
+    public function getDistance()
     {
         //overrides the default PHP memory limit.
         ini_set('memory_limit', '-1');
@@ -20,41 +23,48 @@ class BusController extends BaseController
 
         $url = 'http://www.sbstransit.com.sg/journeyplan/RouteInformation.aspx?';
         //url body: qdirect=1&qservno=199
-        $urlSuffix = '&qpoint=LOOP&dispno=199&qstart=BOON%20LAY%20INT&qend=BOON%20LAY%20INT';
+        $urlSuffix = '&qpoint=NO%20LOOP&dispno=10&qstart=TAMPINES%20INT&qend=TAMPINES%20INT';
+
+
         $cUrls = array();
 
         //create the multi handler
         $multiHandler = curl_multi_init();
 
-        $services = BuuService::all();
+        $services = BusService::take(100)->get();
 
         foreach ($services as $service) {
-            if (is_int($service->bus_service_no) ) {
-                $serviceNumber = str_pad($service->bus_service_no,3,'0',STR_PAD_LEFT);
+            if (is_numeric($service->bus_service_no)) {
+                $serviceNumber = str_pad($service->bus_service_no, 3, '0', STR_PAD_LEFT);
                 //open connection
                 $options = array(
+                    CURLOPT_CUSTOMREQUEST => "GET", //set request type post or get
+                    CURLOPT_POST => false,        //set to GET
                     CURLOPT_RETURNTRANSFER => true,     // return web page
                     CURLOPT_HEADER => false,    // don't return headers
                     CURLOPT_FOLLOWLOCATION => true,     // follow redirects
                     CURLOPT_ENCODING => "",       // handle all encodings
-                    CURLOPT_USERAGENT => "spider", // who am i
+                    CURLOPT_USERAGENT => "Mozilla/5.0 (Windows NT 6.1; rv:8.0) Gecko/20100101 Firefox/8.0", // who am i
                     CURLOPT_AUTOREFERER => true,     // set referer on redirect
                     CURLOPT_CONNECTTIMEOUT => 120,      // timeout on connect
                     CURLOPT_TIMEOUT => 120,      // timeout on response
                     CURLOPT_MAXREDIRS => 10,       // stop after 10 redirects
                     CURLOPT_SSL_VERIFYPEER => false,
-                    //    CURLOPT_COOKIEFILE => $cookieFile,
-                    //    CURLOPT_COOKIEJAR => $cookieFile,
-                    CURLOPT_COOKIE => 'ASP.NET_SessionId=' . $sessionId . '; path=/;',
+                    //CURLOPT_COOKIEFILE => public_path() . "/cookies.txt", //set cookie file
+                    //CURLOPT_COOKIEJAR => public_path() . "/cookies.txt", //set cookie jar
+                    CURLOPT_COOKIE => 'ASP.NET_SessionId=' . $this->sessionId . '; path=/;',
                     //CURLOPT_POST => 1,
                     //CURLOPT_POSTFIELDS => 'txtbox=' . $postalCode,
                 );
 
-                $ch = curl_init($url);
+                $urlQuery = $url . "qdirect=" . $this->direction . "&qservno=" . $serviceNumber . $urlSuffix;
+
+                $ch = curl_init($urlQuery);
                 curl_setopt_array($ch, $options);
                 curl_multi_add_handle($multiHandler, $ch);
 
-                $cUrls[] = $ch;
+                $chArray = array('ch' => $ch, 'route' => $service->bus_service_no);
+                $cUrls[] = $chArray;
             }
         }
 
@@ -71,8 +81,8 @@ class BusController extends BaseController
 
         $records = array();
         foreach ($cUrls as $ch) {
-            $records[] = $this->extractData(curl_multi_getcontent($ch));
-            curl_multi_remove_handle($multiHandler, $ch['curl']);
+            $records[] = $this->extractData(curl_multi_getcontent($ch['ch']), $ch['route']);
+            curl_multi_remove_handle($multiHandler, $ch['ch']);
         }
 
         curl_multi_close($multiHandler);
@@ -85,34 +95,58 @@ class BusController extends BaseController
     }
 
 
-    private function extractData($html)
+    /**
+     * @param $html
+     * @param $route
+     * @return array
+     */
+    private function extractData($html, $route)
     {
 
-        $dataArray = [];
-        $tableTag = "<TABLE  id=\"showtab\"  border=0 cellSpacing=0 cellPadding=0 ";
-        $tableStart = strpos($html, $tableTag);
-        if ($tableStart) {
-            $table = substr($html, $tableStart, strpos($html, "</TABLE>", $tableStart) - $tableStart);
+        $record = array('route' => $route, 'entries' => array());
 
+        $HTMLRoot = new DOMDocument;
+        try {
+            libxml_use_internal_errors(true);
+            $HTMLRoot->loadHTML($html);
+            libxml_use_internal_errors(false);
 
-            $DOM = new DOMDocument;
-            $DOM->loadHTML($table);
+        } catch (ErrorException $e) {
+            die ($route . $html);
 
-            //get all <tr>
-            $items = $DOM->getElementsByTagName('tr');
-
-            //display all H1 text
-            for ($i = 1; $i < $items->length; $i++) {
-                $dataArray[] = $this->recordData($items->item($i)->childNodes, $postalCode);
-
-            }
         }
 
 
-        return $dataArray;
+        //get <table id='dgResult'>
+        $TableNode = $HTMLRoot->getElementById('dgResult');
+        //get all <tr>
+        if (empty($TableNode)) {
+            return $record;
+        } else {
+            $items = $TableNode->getElementsByTagName('tr');
+        }
+
+
+        $stopIds = $this->readStopIds($route);
+
+        $entries = array();
+
+        for ($i = 1; $i < $items->length; $i++) {
+            try {
+                $entries[] = $this->recordData($items->item($i)->childNodes, $route, $stopIds[$i - 1]);
+            } catch (ErrorException $e) {
+
+            }
+
+        }
+
+        $record['entries'] = $entries;
+
+
+        return $record;
     }
 
-    private function recordData($nodes, $postalCode)
+    private function recordData($nodes, $route, $stopId)
     {
         $data = array();
         foreach ($nodes as $node) {
@@ -122,19 +156,46 @@ class BusController extends BaseController
             }
         }
 
-        if (!empty($data) && count($data) >= 4 && strpos($data[1], $postalCode) == (strlen($data[1]) - 5)) {
-            $trackRecord = new NeaTrackRecord;
-            $trackRecord->premises = preg_replace('/\s+/', ' ', $data[1]);
-            $trackRecord->license_ref_no = $data[2];
-            $trackRecord->licensee = $data[3];
-            $trackRecord->postal_code = $postalCode;
-            $trackRecord->save();
-            return $data[1] . ": " . $data[2] . "-" . $data[3];
+        if (!empty($data) && count($data) == 5) {
+            $busStopDistance = new BusStopDistance;
+            $busStopDistance->bus_service_no = $route;
+            $busStopDistance->bus_stop_id = $stopId;
+            if (is_numeric($data[0])){
+                $busStopDistance->distance_km = $data[0];
+            }
+            $busStopDistance->direction = $this->direction;
+            $busStopDistance->save();
+            return $stopId;
         } else {
             return null;
         }
 
     }
+
+    public function readStopIds($route)
+    {
+        $file = public_path() . DIRECTORY_SEPARATOR . "bus-services" . DIRECTORY_SEPARATOR . $route . '.json';
+        $fileObj = json_decode(file_get_contents($file));
+        $directionName = $this->direction;
+        //var_dump($fileObj->$directionName->stops);
+        return $fileObj->$directionName->stops;
+
+    }
+
+    public function testConnection()
+    {
+        $url = "http://www.sbstransit.com.sg/journeyplan/RouteInformation.aspx?qdirect=1&qservno=010&qpoint=NO%20LOOP&dispno=10&qstart=TAMPINES%20INT&qend=TAMPINES%20INT";
+        $ch = curl_init();
+        $timeout = 5;
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+        $data = curl_exec($ch);
+        curl_close($ch);
+        return $data;
+
+    }
+
 
 
 }

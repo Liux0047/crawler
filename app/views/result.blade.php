@@ -24,12 +24,14 @@
 	</style>
 </head>
 <body>
-    @foreach($records as $record)
-    @foreach($record as $entry)
-    @if(!empty($entry))
-    {{ $entry }}<br>
-    @endif
-    @endforeach
-    @endforeach
+    @forelse($records as $record)
+    {{ $record['route'] }}:
+    @forelse($record['entries'] as $entry)
+    {{ $entry }}
+    @empty
+    @endforelse
+    <br>
+    @empty
+    @endforelse
 </body>
 </html>
