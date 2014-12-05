@@ -9,8 +9,8 @@
 class BusController extends BaseController
 {
 
-    private $direction = "1";
-    private $sessionId = 'uvwwxpyiqzkpanuxw1w2sa55';
+    private $direction = "2";
+    private $sessionId = 'b4m3oc55whw2s155nwedfw45';
 
 
     public function getDistance()
@@ -31,7 +31,7 @@ class BusController extends BaseController
         //create the multi handler
         $multiHandler = curl_multi_init();
 
-        $services = BusService::take(100)->get();
+        $services = BusService::all();
 
         foreach ($services as $service) {
             if (is_numeric($service->bus_service_no)) {
@@ -127,13 +127,13 @@ class BusController extends BaseController
         }
 
 
-        $stopIds = $this->readStopIds($route);
+        //$stopIds = $this->readStopIds($route);
 
         $entries = array();
 
         for ($i = 1; $i < $items->length; $i++) {
             try {
-                $entries[] = $this->recordData($items->item($i)->childNodes, $route, $stopIds[$i - 1]);
+                $entries[] = $this->recordData($items->item($i)->childNodes, $route);
             } catch (ErrorException $e) {
 
             }
@@ -146,7 +146,7 @@ class BusController extends BaseController
         return $record;
     }
 
-    private function recordData($nodes, $route, $stopId)
+    private function recordData($nodes, $route)
     {
         $data = array();
         foreach ($nodes as $node) {
@@ -159,13 +159,13 @@ class BusController extends BaseController
         if (!empty($data) && count($data) == 5) {
             $busStopDistance = new BusStopDistance;
             $busStopDistance->bus_service_no = $route;
-            $busStopDistance->bus_stop_id = $stopId;
+            $busStopDistance->bus_stop_name = $data[2];
             if (is_numeric($data[0])){
                 $busStopDistance->distance_km = $data[0];
             }
             $busStopDistance->direction = $this->direction;
             $busStopDistance->save();
-            return $stopId;
+            return $data[0];
         } else {
             return null;
         }
