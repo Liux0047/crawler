@@ -11,12 +11,5 @@ class Distance extends Eloquent{
     protected $table = 'distance';
     protected $primaryKey  = 'distance_id';
 
-    public function source(){
-        return $this->belongsTo('Area', 'source');
-    }
 
-    public function destination(){
-        return $this->belongsTo('Area', 'destination');
-    }
-
-} 
+}

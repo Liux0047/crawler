@@ -163,4 +163,32 @@ class CrawlerController extends BaseController
     }
     */
 
+    /*
+    public function convertGridIndex()
+    {
+        $areas = Area::all();
+        //$areas = Area::where('area_name', '=', '39_a')->get();
+        foreach ($areas as $area) {
+            $areaName = $area->area_name;
+            $areaNumber = intval(substr($areaName, 0, -2)) - 1;
+            $gridStart = (floor($areaNumber / 84)) * 336 + ($areaNumber % 84) * 2;
+            switch ($areaName[strlen($areaName) - 1]) {
+                case 'a':
+                    $area->grid_index = $gridStart + 1;
+                    break;
+                case 'b':
+                    $area->grid_index = $gridStart + 2;
+                    break;
+                case 'c':
+                    $area->grid_index = $gridStart + 169;
+                    break;
+                case 'd':
+                    $area->grid_index = $gridStart + 170;
+                    break;
+            }
+            $area->save();
+        }
+    }
+    */
+
 }

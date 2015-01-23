@@ -87,7 +87,6 @@ class MatrixMapController extends BaseController
 
         return 1;
 
-
     }
 
 
