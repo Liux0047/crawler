@@ -8,14 +8,14 @@
 
 
         var origins = [
-            @foreach($sources as $source)
-            new google.maps.LatLng({{ $source->latitude }} +Math.random() / 400, {{ $source->longitude }} +Math.random() / 400),
-            @endforeach
+            @for ($i = 0; $i < 10; $i++)
+            new google.maps.LatLng({{ $source->latitude }} -Math.random() / 400, {{ $source->longitude }} +Math.random() / 400),
+            @endfor
         ];
 
         var destinations = [
             @foreach($destinations as $destination)
-            new google.maps.LatLng({{ $destination['latitude'] }} +Math.random() / 400, {{ $destination['longitude'] }} +Math.random() / 400),
+            new google.maps.LatLng({{ $destination['latitude'] }} -Math.random() / 400, {{ $destination['longitude'] }} +Math.random() / 400),
             @endforeach
         ];
 
@@ -31,19 +31,20 @@
                 }, callback);
 
         function callback(response, status) {
-            if (status != google.maps.DistanceMatrixStatus.OK) {
+            if (status != google.maps.DistanceMatrixStatus.OK ) {
+                //handle Google error
                 window.location.replace(window.location.href);
             } else {
 
                 //start a new window
                 setTimeout(function () {
                     window.open("{{ $nextUrl }}", "_blank");
-                }, 500);
+                }, 0);
 
                 var origins = [
-                    @foreach( $sources as $source)
+                    @for ($i = 0; $i < 10; $i++)
                     {{ $source->grid_index }},
-                    @endforeach
+                    @endfor
                 ];
                 var destinations = [
                     @foreach( $destinations as $destination)
@@ -52,17 +53,6 @@
                 ];
                 var outputDiv = document.getElementById('outputDiv');
                 outputDiv.innerHTML = '';
-
-                /*
-                 for (var i = 0; i < origins.length; i++) {
-                 var results = response.rows[i].elements;
-                 for (var j = 0; j < results.length; j++) {
-                 outputDiv.innerHTML += origins[i] + ' to ' + destinations[j]
-                 + ': ' + results[j].distance.value + ' in '
-                 + results[j].duration.value + '<br>';
-                 }
-                 }
-                 */
 
 
                 $.ajax({
@@ -75,15 +65,13 @@
                         mode: "{{ $mode }}",
                         results: JSON.stringify(response.rows)
                     }
-                })
-                        .done(function (msg) {
-                            outputDiv.innerHTML += 'Saved' + '<br>';
-                        })
-                        .always(function () {
-                            //close this window
-                            window.close();
+                }).done(function (msg) {
+                    outputDiv.innerHTML += 'Saved' + '<br>';
+                }).always(function () {
+                    //close this window
+                    window.close();
 
-                        });
+                });
             }
 
         }

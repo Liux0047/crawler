@@ -14,73 +14,88 @@ class WalkingRandom extends BaseController
 
     private $size = 9468;
     private $lastGridIndex = 15712;
-    private $batch = 0;
 
 
-    public function getWalkingRandom($sourcePos)
+    public function getWalkingRandom($sourcePos, $destinationPos)
     {
         //select sources and destinations based on input
-        $sources = Area::where('grid_index', '>=', $sourcePos)
+        $source = Area::where('grid_index', '>=', $sourcePos)
             ->orderBy('grid_index')
-            ->take(10)
-            ->get();
+            ->first();
 
 
-        if (!Session::has('destinationArray')) {
-            $destinationStart = $sources->first()->grid_index - self::ROW_WIDTH * self::OFFSET - self::OFFSET;
+        if ($destinationPos == 0) {
+            $destinationStart = $source->grid_index - self::ROW_WIDTH * self::OFFSET - self::OFFSET;
             if ($destinationStart < 0) {
                 $destinationStart = 0;
             }
-
-            $destinationEnd = $sources->last()->grid_index + self::ROW_WIDTH * self::OFFSET + self::OFFSET;
-            if ($destinationEnd > $this->lastGridIndex) {
-                $destinationEnd = $this->lastGridIndex;
-            }
-
-            $destinationsAll = Area::where('grid_index', '>=', $destinationStart)
-                ->where('grid_index', '<=', $destinationEnd)
-                ->orderBy('grid_index')
-                ->get();
-
-            foreach ($destinationsAll as $destination) {
-                $lowerColIndex = $sources->first()->grid_index - 15;
-                $higherColIndex = $sources->last()->grid_index + 15;
-                //check for column bond
-                if ($destination->grid_index % self::ROW_WIDTH > $lowerColIndex
-                    && $destination->grid_index % self::ROW_WIDTH < $higherColIndex) {
-                    $destinationItem = array();
-                    $destinationItem['grid_index'] = $destination->grid_index;
-                    $destinationItem['latitude'] = $destination->latitude;
-                    $destinationItem['longitude'] = $destination->longitude;
-
-                    $destinationArray[] = $destinationItem;
-                }
-
-            }
-
-            Session::put('destinationArray', $destinationArray);
+        } else {
+            $destinationStart = $destinationPos;
         }
 
-        $destinationArray = Session::get('destinationArray');
-        $destinations = array_splice($destinationArray, 0, 10);
-        Session::forget('destinationArray');
-        if (count($destinationArray) > 0) {
-            Session::put('destinationArray', $destinationArray);
+
+        $destinationEnd = $source->grid_index + self::ROW_WIDTH * self::OFFSET + self::OFFSET;
+        if ($destinationEnd > $this->lastGridIndex) {
+            $destinationEnd = $this->lastGridIndex;
+        }
+
+        $destinationsAll = Area::where('grid_index', '>=', $destinationStart)
+            ->where('grid_index', '<=', $destinationEnd)
+            ->orderBy('grid_index')
+            ->get();
+
+
+        $destinationArray = array();
+
+        foreach ($destinationsAll as $destination) {
+            $lowerColIndex = $source->grid_index - 15;
+            $higherColIndex = $source->grid_index + 15;
+            //check for column bond
+            if ($destination->grid_index % self::ROW_WIDTH > $lowerColIndex
+                && $destination->grid_index % self::ROW_WIDTH < $higherColIndex
+            ) {
+                $destinationItem = array();
+                $destinationItem['grid_index'] = $destination->grid_index;
+                $destinationItem['latitude'] = $destination->latitude;
+                $destinationItem['longitude'] = $destination->longitude;
+
+                $destinationArray[] = $destinationItem;
+            }
 
         }
 
+
+        $nextSourcePos = $source->grid_index + 1;
+
+        $destinations = array_slice($destinationArray, 0, 10);
+
+
+        $isDestinationEmpty = false;
+        if (count($destinationArray) > 10) {
+            $nextDestinationPos = $destinationArray[10]['grid_index'];
+        } else {
+            $isDestinationEmpty = true;
+        }
+
+
+        if (count($destinations) == 0) {
+            // if empty destinations
+            return Redirect::to('map-walking-random/' . $nextSourcePos);
+        } else {
+
+
+        }
 
         //form the request URL
-        $param['sources'] = $sources;
+        $param['source'] = $source;
         $param['destinations'] = $destinations;
         $param['mode'] = 'WALKING';
 
-        $nextSourcePos = $sources->last()->grid_index + 1;
-        if (Session::has('destinationArray')) {
-            $param['nextUrl'] = asset('map-walking-random/' . $sourcePos);
+        if (!$isDestinationEmpty) {
+            $param['nextUrl'] = asset('map-walking-random/' . $sourcePos . '/' . $nextDestinationPos);
         } else {
             if ($sourcePos < $this->size) {
-                $param['nextUrl'] = asset('map-walking-random/' . $nextSourcePos);
+                $param['nextUrl'] = asset('map-walking-random/' . $nextSourcePos . '/0');
             } else {
                 $param['nextUrl'] = NULL;
             }
@@ -109,7 +124,6 @@ class WalkingRandom extends BaseController
                     $distance->mode = Input::get('mode');
                     $distance->distance = $result->distance->value;
                     $distance->duration = $result->duration->value;
-                    $distance->batch = $this->batch;
                     $distance->save();
                 }
                 $col++;
@@ -121,7 +135,8 @@ class WalkingRandom extends BaseController
 
     }
 
-    public function getFlush(){
+    public function getFlush()
+    {
         Session::flush();
     }
 
