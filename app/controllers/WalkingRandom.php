@@ -48,9 +48,9 @@ class WalkingRandom extends BaseController
         $destinationArray = array();
 
         foreach ($destinationsAll as $destination) {
-            $lowerColIndex = $source->grid_index - 15;
-            $higherColIndex = $source->grid_index + 15;
-            //check for column bond
+            $lowerColIndex = $source->grid_index % self::ROW_WIDTH - self::OFFSET;
+            $higherColIndex = $source->grid_index % self::ROW_WIDTH + self::OFFSET;
+            //check for column bound
             if ($destination->grid_index % self::ROW_WIDTH > $lowerColIndex
                 && $destination->grid_index % self::ROW_WIDTH < $higherColIndex
             ) {
@@ -80,7 +80,8 @@ class WalkingRandom extends BaseController
 
         if (count($destinations) == 0) {
             // if empty destinations
-            return Redirect::to('map-walking-random/' . $nextSourcePos);
+
+            return Redirect::to('map-walking-random/' . $nextSourcePos . '/0');
         } else {
 
 
