@@ -19,13 +19,14 @@ class WalkingRandom extends BaseController
     public function getWalkingRandom($sourcePos, $destinationPos)
     {
         //select sources and destinations based on input
-        $source = Area::where('grid_index', '>=', $sourcePos)
+        $sources = Area::where('grid_index', '>=', $sourcePos)
             ->orderBy('grid_index')
-            ->first();
+            ->take(2)
+            ->get();
 
 
         if ($destinationPos == 0) {
-            $destinationStart = $source->grid_index - self::ROW_WIDTH * self::OFFSET - self::OFFSET;
+            $destinationStart = $sources->first()->grid_index - self::ROW_WIDTH * self::OFFSET - self::OFFSET;
             if ($destinationStart < 0) {
                 $destinationStart = 0;
             }
@@ -34,7 +35,7 @@ class WalkingRandom extends BaseController
         }
 
 
-        $destinationEnd = $source->grid_index + self::ROW_WIDTH * self::OFFSET + self::OFFSET;
+        $destinationEnd = $sources->last()->grid_index + self::ROW_WIDTH * self::OFFSET + self::OFFSET;
         if ($destinationEnd > $this->lastGridIndex) {
             $destinationEnd = $this->lastGridIndex;
         }
@@ -48,8 +49,8 @@ class WalkingRandom extends BaseController
         $destinationArray = array();
 
         foreach ($destinationsAll as $destination) {
-            $lowerColIndex = $source->grid_index % self::ROW_WIDTH - self::OFFSET;
-            $higherColIndex = $source->grid_index % self::ROW_WIDTH + self::OFFSET;
+            $lowerColIndex = $sources->first()->grid_index % self::ROW_WIDTH - self::OFFSET;
+            $higherColIndex = $sources->first()->grid_index % self::ROW_WIDTH + self::OFFSET;
             //check for column bound
             if ($destination->grid_index % self::ROW_WIDTH > $lowerColIndex
                 && $destination->grid_index % self::ROW_WIDTH < $higherColIndex
@@ -65,7 +66,7 @@ class WalkingRandom extends BaseController
         }
 
 
-        $nextSourcePos = $source->grid_index + 1;
+        $nextSourcePos = $sources->last()->grid_index + 1;
 
         $destinations = array_slice($destinationArray, 0, 10);
 
@@ -88,7 +89,7 @@ class WalkingRandom extends BaseController
         }
 
         //form the request URL
-        $param['source'] = $source;
+        $param['sources'] = $sources;
         $param['destinations'] = $destinations;
         $param['mode'] = 'WALKING';
 

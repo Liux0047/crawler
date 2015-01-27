@@ -8,9 +8,11 @@
 
 
         var origins = [
-            @for ($i = 0; $i < 10; $i++)
+            @foreach($sources as $source)
+            @for ($i = 0; $i < 5; $i++)
             new google.maps.LatLng({{ $source->latitude }} -Math.random() / 400, {{ $source->longitude }} +Math.random() / 400),
             @endfor
+            @endforeach
         ];
 
         var destinations = [
@@ -31,7 +33,7 @@
                 }, callback);
 
         function callback(response, status) {
-            if (status != google.maps.DistanceMatrixStatus.OK ) {
+            if (status != google.maps.DistanceMatrixStatus.OK) {
                 //handle Google error
                 window.location.replace(window.location.href);
             } else {
@@ -42,9 +44,11 @@
                 }, 0);
 
                 var origins = [
-                    @for ($i = 0; $i < 10; $i++)
+                    @foreach($sources as $source)
+                    @for ($i = 0; $i < 5; $i++)
                     {{ $source->grid_index }},
                     @endfor
+                    @endforeach
                 ];
                 var destinations = [
                     @foreach( $destinations as $destination)
