@@ -160,7 +160,7 @@ class BusController extends BaseController
             $busStopDistance = new BusStopDistance;
             $busStopDistance->bus_service_no = $route;
             $busStopDistance->bus_stop_name = $data[2];
-            if (is_numeric($data[0])){
+            if (is_numeric($data[0])) {
                 $busStopDistance->distance_km = $data[0];
             }
             $busStopDistance->direction = $this->direction;
@@ -196,6 +196,36 @@ class BusController extends BaseController
 
     }
 
+    public function mapStopID($direction)
+    {
+        $routes = BusStopDistance::select('bus_service_no')
+            ->where('direction', '=', $direction)
+            ->groupBy('bus_service_no')
+            ->get();
+        foreach ($routes as $route) {
+            $routeNum = $route->bus_service_no;
+            $file = file_get_contents(public_path() . DIRECTORY_SEPARATOR . 'bus-services' . DIRECTORY_SEPARATOR . $routeNum . '.json');
+            $stopIds = json_decode($file)->$direction->stops;
+
+            //var_dump($stopIds);
+            $busStops = BusStopDistance::where('bus_service_no', '=', $routeNum)
+                ->where('direction', '=', $direction)
+                ->orderBy('distance_km')
+                ->get();
+
+            //var_dump(DB::getQueryLog());
+            $index = 0;
+            foreach ($busStops as $busStop) {
+                if ($index < count($stopIds)) {
+                    $busStop->bus_stop_id = $stopIds[$index];
+                    $busStop->save();
+                }
+                $index++;
+            }
+            //die();
+        }
+
+    }
 
 
 }

@@ -32,6 +32,8 @@ Route::get('bus-service-stops', 'BusController@padStopId');
 
 Route::get('bus-service-smrt', 'SMRTController@getDistance');
 
+//map bus stops to stop ID
+Route::get('bus-stop-map/{direction}', 'BusController@mapStopID');
 
 Route::get('convert-grid', 'CrawlerController@convertGridIndex');
 
@@ -40,6 +42,9 @@ Route::get('convert-grid', 'CrawlerController@convertGridIndex');
 Route::get('map-walking-random/{sourcePos}/{destinationPos}', 'WalkingRandom@getWalkingRandom');
 Route::post('store-distance-random', 'WalkingRandom@recordDistance');
 Route::get('flush', 'WalkingRandom@getFlush');
+
+
+
 
 
 
