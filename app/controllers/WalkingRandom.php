@@ -96,7 +96,7 @@ class WalkingRandom extends BaseController
         if (!$isDestinationEmpty) {
             $param['nextUrl'] = asset('map-walking-random/' . $sourcePos . '/' . $nextDestinationPos);
         } else {
-            if ($sourcePos < $this->size) {
+            if ($sourcePos < $this->lastGridIndex) {
                 $param['nextUrl'] = asset('map-walking-random/' . $nextSourcePos . '/0');
             } else {
                 $param['nextUrl'] = NULL;
