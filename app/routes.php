@@ -25,7 +25,7 @@ Route::get('read-file', 'MatrixMapController@getReadFile');
 Route::get('map-matrix/{sourcePos}/{destinationPos}', 'MatrixMapController@getMapMatrix');
 Route::post('store-distance', 'MatrixMapController@recordDistance');
 
-Route::get('bus-service', 'BusController@getDistance');
+Route::get('bus-service/{batch}', 'BusController@getDistance');
 Route::get('bus-service-test', 'BusController@testConnection');
 Route::get('bus-service-stops', 'BusController@padStopId');
 

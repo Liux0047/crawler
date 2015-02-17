@@ -9,11 +9,11 @@
 class BusController extends BaseController
 {
 
-    private $direction = "2";
-    private $sessionId = 'b4m3oc55whw2s155nwedfw45';
+    private $direction = "1";
+    private $sessionId = 'mbir2l55q1po3guyyropgj55';
 
 
-    public function getDistance()
+    public function getDistance($batch)
     {
         //overrides the default PHP memory limit.
         ini_set('memory_limit', '-1');
@@ -31,7 +31,7 @@ class BusController extends BaseController
         //create the multi handler
         $multiHandler = curl_multi_init();
 
-        $services = BusService::all();
+        $services = BusService::skip(20 * $batch)->take(20)->get();
 
         foreach ($services as $service) {
             if (is_numeric($service->bus_service_no)) {
@@ -151,12 +151,14 @@ class BusController extends BaseController
         $data = array();
         foreach ($nodes as $node) {
             $nodeValue = trim($node->nodeValue);
+            $data[] = $nodeValue;
+            /*
             if (!empty($nodeValue)) {
                 $data[] = $nodeValue;
-            }
+            } */
         }
 
-        if (!empty($data) && count($data) == 5) {
+        if (!empty($data)) {
             $busStopDistance = new BusStopDistance;
             $busStopDistance->bus_service_no = $route;
             $busStopDistance->bus_stop_name = $data[2];
