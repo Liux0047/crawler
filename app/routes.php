@@ -35,6 +35,9 @@ Route::get('bus-service-smrt', 'SMRTController@getDistance');
 //map bus stops to stop ID
 Route::get('bus-stop-map/{direction}', 'BusController@mapStopID');
 
+//Transit link data
+Route::get('bus-transitlink', 'TransitLinkController@getTransitLinkDistance');
+
 Route::get('convert-grid', 'CrawlerController@convertGridIndex');
 
 
