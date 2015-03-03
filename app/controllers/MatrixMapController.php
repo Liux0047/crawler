@@ -29,12 +29,12 @@ class MatrixMapController extends BaseController
     public function getMapMatrix($sourcePos, $destinationPos)
     {
         //select sources and destinations based on input
-        $sources = Area::where('area_id', '>=', $sourcePos * self::MATRIX_SIZE)
-            ->where('area_id', '<', $sourcePos * self::MATRIX_SIZE + self::MATRIX_SIZE)
+        $sources = Area::where('grid_index', '>=', $sourcePos * self::MATRIX_SIZE)
+            ->where('grid_index', '<', $sourcePos * self::MATRIX_SIZE + self::MATRIX_SIZE)
             ->get();
 
-        $destinations = Area::where('area_id', '>=', $destinationPos * self::MATRIX_SIZE)
-            ->where('area_id', '<', $destinationPos * self::MATRIX_SIZE + self::MATRIX_SIZE)
+        $destinations = Area::where('grid_index', '>=', $destinationPos * self::MATRIX_SIZE)
+            ->where('grid_index', '<', $destinationPos * self::MATRIX_SIZE + self::MATRIX_SIZE)
             ->get();
 
         //form the request URL

@@ -42,12 +42,12 @@
 
             var origins = [
                 @foreach( $sources as $source)
-                {{ $source->area_id }},
+                {{ $source->grid_index }},
                 @endforeach
             ];
             var destinations = [
                 @foreach( $destinations as $destination)
-                {{ $destination->area_id }},
+                {{ $destination->grid_index }},
                 @endforeach
             ];
             var outputDiv = document.getElementById('outputDiv');
