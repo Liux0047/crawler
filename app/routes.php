@@ -47,6 +47,10 @@ Route::post('store-distance-random', 'WalkingRandom@recordDistance');
 Route::get('flush', 'WalkingRandom@getFlush');
 
 
+//cea data
+Route::get('cea', 'CeaController@getData');
+
+
 
 
 
